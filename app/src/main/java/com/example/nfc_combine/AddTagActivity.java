@@ -1,5 +1,6 @@
 package com.example.nfc_combine;
 
+
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.PendingIntent;
@@ -24,8 +25,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.bluetooth.RFduinoService;
+import com.example.bluetooth.HexAsciiHelper;
 
 import org.apache.http.impl.cookie.RFC2109DomainHandler;
+
 
 
 // The Activity, which gets called, when I want to add or edit a Tag
@@ -51,18 +54,26 @@ public class AddTagActivity extends Activity {
     private final BroadcastReceiver rfduinoReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+
             final String action = intent.getAction();
-            Log.w("Main","rfduinoReceiver called with " + action);
-            if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action)) {
+            Log.w("Tag_Activity","rfduinoReceiver called with " + action);
+            setResultData("");
+            if (RFduinoService.ACTION_DATA_AVAILABLE.equals(action) && intent.getBooleanExtra(RFduinoService.ACTION_DATA_TAG,false)) {
+
                 Log.i(TAG, "BTE Dialog Dismiss");
                 byte[] id = intent.getByteArrayExtra(RFduinoService.EXTRA_DATA);
+                setResultData("Tag_Activity");
                 if(id != null) {
-                    int tmp = getDec(id);
-                    if (db.idCheck(tmp)) tmpID.setText(Integer.toString(tmp));
+//                    int tmp = getDec(id);
+//                	int tmp = HexAsciiHelper.bytesToDec(id);
+                	String tmp = HexAsciiHelper.bytesToAsciiMaybe(id);
+                	Log.i(TAG, "hex string from rf..." + HexAsciiHelper.bytesToAsciiMaybe(id));
+                    if (db.idCheck(tmp)) tmpID.setText(tmp);
                     else {
                         Toast errorToast = Toast.makeText(getApplicationContext(),
                                 "You already have a Tag with this ID in your database", Toast.LENGTH_SHORT);
                         errorToast.show();
+                        Log.i(TAG, "you have this id!!!");
                         finish();
                     }
                 }
@@ -94,7 +105,7 @@ public class AddTagActivity extends Activity {
 			Log.i(TAG, "edit Tag, I fetch the data");
 			newElement = false;
 			//assign the values to the tmpTag
-			tmpTag.setTagID(oldData.getInt("tag_id"));			
+			tmpTag.setTagID(oldData.getString("tag_id"));			
 			tmpTag.setItemID(oldData.getInt("item_id"));
 			tmpTag.setTagName(oldData.getString("tag_name"));
 			tmpTag.setRemind(oldData.getBoolean("remind_me"));
@@ -102,7 +113,7 @@ public class AddTagActivity extends Activity {
 			tmpTag.setWearing(oldData.getBoolean("at_human"));
 			tmpTag.setCategory(oldData.getString("tag_category"));
 			//proper assignment of the layout parts
-			tmpID.setText(Integer.valueOf(tmpTag.getTagID()).toString());
+			tmpID.setText(tmpTag.getTagID());
 			tmpName.setText(tmpTag.getTagName());
 			mSpinner.setSelection(adapter.getPosition(tmpTag.getCategory()));
 			
@@ -113,7 +124,8 @@ public class AddTagActivity extends Activity {
 			mDialog.show(getFragmentManager(), "NFCprompt");
 			mNFCadapter = NfcAdapter.getDefaultAdapter(this);
 			mPending = PendingIntent.getActivity(this, 0, 
-			new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);			
+			new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);		
+			
 		}				
 	}
 
@@ -127,10 +139,18 @@ public class AddTagActivity extends Activity {
 			Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
 
 			if(checkTech(tag)){				
-				byte[] id = getIntent().getByteArrayExtra(NfcAdapter.EXTRA_ID);
+				byte[] id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
+						//getIntent().getByteArrayExtra(NfcAdapter.EXTRA_ID);
+				
 				if(id != null){
-					int tmp = getDec(id);
-					if(db.idCheck(tmp)) tmpID.setText(Integer.toString(tmp));
+//					int tmp = getDec(id);
+					String tmp = getHex(id);
+					Log.i(TAG, "in hex string from phone..." + getHex(id));
+//					Log.i(TAG, "in hex HexAscii... " + HexAsciiHelper.bytesToHex(id));
+//					Log.i(TAG, "in dec..." + getDec(id));
+//					Log.i(TAG, "in dec HexAscii... " + HexAsciiHelper.bytesToDec(id));
+//					Log.i(TAG, "in decReversed..." + getDecReversed(id));
+					if(db.idCheck(tmp)) tmpID.setText(tmp);
 					else {
 						Toast errorToast = Toast.makeText(getApplicationContext(), 
 								"You already have a Tag with this ID in your database", Toast.LENGTH_SHORT);
@@ -166,13 +186,24 @@ public class AddTagActivity extends Activity {
 
 	private int getDec(byte[] bytes) {		
 	int result = 0;
-    int factor = 1;
-    for (int i = 0; i < bytes.length; ++i) {
-        int value = (int) (bytes[i] & 0xffl);
-        result += value * factor;
-        factor *= 256l;
-    }
-    return result;		
+	String hex = getHex(bytes);
+	StringBuilder msb = new StringBuilder();
+	for(int i = 0; i < hex.length(); i++){
+		char c = hex.charAt(i);
+		if(c != ' ') msb.append(c);			
+	}
+		
+    result = (int) Long.parseLong(msb.toString(), 16);    
+    return result;
+	}
+		
+	private String getHex(byte[] bytes) {
+	StringBuilder sb = new StringBuilder();
+	for (int i = 0; i < bytes.length; i++) {
+		sb.append(String.format(" %02X", bytes[i]));
+		}
+	sb.deleteCharAt(0);
+	return sb.toString();	
 	}
 	
 	private void saveDataLeave(){
@@ -180,13 +211,13 @@ public class AddTagActivity extends Activity {
 		Bundle data = new Bundle();
 		
 		tmpTag.setTagName(tmpName.getText().toString());
-		tmpTag.setTagID(Integer.valueOf(tmpID.getText().toString()));
+		tmpTag.setTagID(tmpID.getText().toString());
 		tmpTag.setCategory(mSpinner.getSelectedItem().toString());
 		tmpTag.setRemind(false);
 		tmpTag.setWearing(false);
 		
 		data.putString("tag_name", tmpTag.getTagName());		
-		data.putInt("tag_id", tmpTag.getTagID());
+		data.putString("tag_id", tmpTag.getTagID());
 		data.putString("tag_category", tmpTag.getCategory());	
 		data.putInt("item_id", tmpTag.getItemID());
 		data.putBoolean("reminder", tmpTag.shouldRemind());
@@ -225,16 +256,18 @@ public class AddTagActivity extends Activity {
     protected void onStop() {
         super.onStop();
 //        bteAdapter.stopLeScan(this);
-        unregisterReceiver(rfduinoReceiver);
+        //unregisterReceiver(rfduinoReceiver);
     }
 	
 	public void onPause(){
 		super.onPause();
+        unregisterReceiver(rfduinoReceiver);
 		if(newElement) mNFCadapter.disableForegroundDispatch(this);	
 	}
 	
 	public void onResume(){
 		super.onResume();
+        registerReceiver(rfduinoReceiver, RFduinoService.getIntentFilter());
 		if(newElement) mNFCadapter.enableForegroundDispatch(this, mPending, null, null);	
 	}
 	

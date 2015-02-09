@@ -87,7 +87,7 @@ public class BluetoothActivity extends Activity implements BluetoothAdapter.LeSc
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            Log.w("Main","rfduinoReceiver called with " + action);
+            Log.w("BTActivity","rfduinoReceiver called with " + action);
             if (RFduinoService.ACTION_CONNECTED.equals(action)) {
                 upgradeState(STATE_CONNECTED);
             } else if (RFduinoService.ACTION_DISCONNECTED.equals(action)) {
