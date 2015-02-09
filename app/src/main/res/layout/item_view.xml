@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <!-- <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/tag_object"
+        android:id="@+id/objectName"
+        android:layout_marginStart="81dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/reminder_tag"
+        android:id="@+id/objectReminder"
+        android:layout_below="@+id/objectName"
+        android:layout_alignStart="@+id/objectName"
+        android:layout_marginTop="25dp" />-->
+
+    <Button
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:text="J"
+        android:id="@+id/button"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="29dp"
+        android:layout_marginTop="28dp" />
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/button"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="70dp">
+
+        <TextView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:text="J"
+            android:id="@+id/textView9"
+            android:layout_marginStart="26dp"
+            android:layout_marginTop="31dp"
+            android:padding="0dp"
+            android:background="@color/material_blue_grey_900"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:textColor="@android:color/white"
+            android:textSize="16dp"
+            android:paddingEnd="0dp"
+            android:gravity="center" />
+    </RelativeLayout>
+</RelativeLayout>
